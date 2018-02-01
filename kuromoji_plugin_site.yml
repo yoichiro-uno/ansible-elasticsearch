@@ -1,0 +1,6 @@
+---
+- name: Install Kuromoji Plugin
+  hosts: all
+  become: yes
+  roles:
+    - kuromoji_plugin

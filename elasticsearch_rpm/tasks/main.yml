@@ -1,0 +1,48 @@
+---
+- name: Install elasticsearch GPG Key
+  rpm_key:
+    state: present
+    key: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+
+- name: Add Repository
+  yum_repository:
+    name: "elasticsearch-6.x"
+    description: "Elasticsearch repository for 6.x packages"
+    baseurl: https://artifacts.elastic.co/packages/6.x/yum
+    gpgkey: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    gpgcheck: yes
+    enabled: yes
+    
+- name: upgrade all packages
+  yum:
+    name: '*'
+    state: latest
+
+- name: Install Openjdk1.8
+  yum:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - java-1.8.0-openjdk
+
+- name: Install Elasticsearch
+  yum:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - elasticsearch
+
+- name: Accept access from all
+  lineinfile:
+    path: "/etc/elasticsearch/elasticsearch.yml"
+    state: present
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - {regexp: '^#network.host:', line: 'network.host: 0.0.0.0'}
+
+- name: Start elastic search
+  systemd:
+    name: elasticsearch
+    state: started
+    enabled: yes

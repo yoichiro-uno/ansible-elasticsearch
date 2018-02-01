@@ -1,0 +1,11 @@
+---
+- name: Install Kuromoji Plugins
+  elasticsearch_plugin:
+    name: analysis-kuromoji
+    plugin_dir: "{{ plugin_directory }}"
+    state: present
+
+- name: restart elasticsearch
+  systemd:
+    name: elasticsearch
+    state: restarted
