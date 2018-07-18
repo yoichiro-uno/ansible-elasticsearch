@@ -1,0 +1,99 @@
+---
+#- name: Install Dependence
+#  apt:
+#    name: "{{ item }}"
+#    state: latest
+#  with_items:
+#    - apt-transport-https
+#
+#- name: Install elasticsearch GPG Key
+#  apt_key:
+#    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+#    state: present
+#
+#- name: Add Repository for elasticsearch Debian
+#  apt_repository:
+#    repo: deb https://artifacts.elastic.co/packages/6.x/apt/ stable main
+#    filename: elastic-6.x
+#    state: present
+#    description: "Elasticsearch repository for 6.x packages"
+#    baseurl: https://artifacts.elastic.co/packages/6.x/apt
+#    gpgkey: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+#    gpgcheck: yes
+#    enabled: yes
+    
+#- name: upgrade all packages
+#  apt:
+#    name: '*'
+#    state: latest
+
+#- name: Run the equivalent of "apt-get update" as a separate step
+#  apt:
+#    update_cache: yes
+
+- name: Install Dependency
+  apt:
+    name: "{{ item }}"
+    state: latest
+    update_cache: yes
+  with_items:
+    - oracle-java8-jdk
+#    - unzip
+
+#- name: Download Elasticsearch
+#  get_url:
+#    url: "{{ elasticsearch_URL }}/{{ elasticsearch_filename }}"
+#    dest: "/tmp/{{ elasticsearch_filename }}"
+#    sha256: {{ elasticsearch_sha }}
+#    mode: 0666
+#    force: True
+
+
+- name: Install Elasticsearch
+  apt:
+    deb: https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-6.3.1.deb
+    state: present
+#  unarchive:
+#    src: "{{ elasticsearch_URL }}/{{ elasticsearch_filename }}"
+#    dest: /etc/
+#    remote_src: yes
+
+#- name: rename dir
+#  shell: /bin/bash -lc "mv /etc/elasticsearch-6.3.0 /etc/elasticsearch"
+
+
+- name: Accept access from all
+  lineinfile:
+    path: "/etc/elasticsearch/elasticsearch.yml"
+    state: present
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - {regexp: '^#network.host:', line: 'network.host: 0.0.0.0'}
+
+- name: Not cluster, dont use xpack
+  lineinfile:
+    path: "/etc/elasticsearch/elasticsearch.yml"
+    state: present
+    line: "{{ item }}"
+  with_items:
+    - 'discovery.type: single-node'
+    - 'xpack.security.enabled: false'
+    - 'xpack.ml.enabled: false'
+
+- name: Adjust memory amount
+  lineinfile:
+    path: "/etc/elasticsearch/jvm.options"
+    state: present
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - {regexp: '^-Xms1g', line: '-Xms256m'}
+    - {regexp: '^-Xmx1g', line: '-Xmx256m'}
+
+- name: Start elastic search
+  service:
+    name: elasticsearch
+    state: started
+    enabled: yes
+#  shell: /bin/bash -lc "/etc/elasticsearch/bin/elasticsearch"
